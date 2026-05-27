@@ -207,34 +207,34 @@ export const ChessBoard: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[5px] p-4 text-center select-none"
+              className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[5px] p-3 sm:p-4 text-center select-none"
             >
               <motion.div
                 initial={{ scale: 0.88, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.88, opacity: 0 }}
                 transition={{ type: 'spring', duration: 0.4 }}
-                className="w-full max-w-[360px] rounded-2xl bg-[#262522]/95 border border-zinc-800/85 p-5 shadow-2xl shadow-black/95 flex flex-col gap-4 animate-fadeIn"
+                className="w-full max-w-[360px] max-h-[96%] overflow-y-auto custom-scrollbar rounded-2xl bg-[#262522]/95 border border-zinc-800/85 p-3.5 sm:p-5 shadow-2xl shadow-black/95 flex flex-col gap-2.5 sm:gap-4 animate-fadeIn"
               >
                 {/* Header */}
-                <div className="flex flex-col gap-1 items-center">
-                  <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800/80 shadow-inner">
-                    <Sparkles className="h-5.5 w-5.5 text-emerald-400" />
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="h-4.5 w-4.5 text-emerald-400 animate-pulse" />
+                    <h2 className="text-base sm:text-lg font-black tracking-tight text-white uppercase leading-none">
+                      START NEW BATTLE
+                    </h2>
                   </div>
-                  <h2 className="text-lg font-black tracking-tight text-white uppercase mt-2">
-                    START NEW BATTLE
-                  </h2>
-                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mt-1">
                     VS STOCKFISH AI
                   </p>
                 </div>
 
                 {/* 1. Difficulty Level Option */}
-                <div className="flex flex-col gap-1.5 text-left">
+                <div className="flex flex-col gap-1 text-left">
                   <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider pl-1">
                     Select Bot Level:
                   </span>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {(['easy', 'medium', 'hard'] as const).map((level) => (
                       <button
                         key={level}
@@ -249,7 +249,7 @@ export const ChessBoard: React.FC = () => {
                             : 'bg-zinc-950/20 border-zinc-800/50 text-zinc-500 hover:border-zinc-700/60 hover:text-zinc-300'
                         }`}
                       >
-                        <span className="text-base">
+                        <span className="text-base leading-none">
                           {level === 'easy' ? '🟢' : level === 'medium' ? '🟡' : '🔴'}
                         </span>
                         <span>{level}</span>
@@ -259,7 +259,7 @@ export const ChessBoard: React.FC = () => {
                 </div>
 
                 {/* 2. Time Control Presets */}
-                <div className="flex flex-col gap-1.5 text-left">
+                <div className="flex flex-col gap-1 text-left">
                   <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider pl-1">
                     Select Time Limit:
                   </span>
@@ -291,11 +291,11 @@ export const ChessBoard: React.FC = () => {
                 </div>
 
                 {/* 3. Side Orientation Option */}
-                <div className="flex flex-col gap-1.5 text-left">
+                <div className="flex flex-col gap-1 text-left">
                   <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider pl-1">
                     Play As:
                   </span>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {[
                       { name: 'White', side: 'white' as const, icon: '♔', color: 'text-zinc-100' },
                       { name: 'Random', side: 'random' as const, icon: '🎲', color: 'text-amber-500' },
@@ -327,7 +327,7 @@ export const ChessBoard: React.FC = () => {
                       : selectedOrientation;
                     startGame(selectedDifficulty, selectedTimePreset, finalOrientation);
                   }}
-                  className="flex items-center justify-center gap-2 w-full py-3 mt-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white font-black text-xs shadow-xl shadow-emerald-500/20 transition-all duration-150 cursor-pointer tracking-wider uppercase"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 sm:py-3 mt-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white font-black text-xs shadow-xl shadow-emerald-500/20 transition-all duration-150 cursor-pointer tracking-wider uppercase"
                 >
                   <span>⚔️ START BATTLE</span>
                 </button>
