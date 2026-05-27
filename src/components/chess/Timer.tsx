@@ -7,7 +7,7 @@ import { formatTime } from '../../utils/chessHelpers';
 
 export const Timer: React.FC = () => {
   const { gameState } = useGame();
-  const { whiteTime, blackTime, isGameOver, fen, isAiThinking } = gameState;
+  const { whiteTime, blackTime, isGameOver, fen, isAiThinking, boardOrientation, initialTime } = gameState;
 
   // Detect active side based on FEN turn flag
   const turn = fen.split(' ')[1] || 'w';
@@ -20,7 +20,7 @@ export const Timer: React.FC = () => {
     isActive: boolean,
     isAi: boolean
   ) => {
-    const isCritical = time < 30; // Under 30 seconds left is critical
+    const isCritical = initialTime !== 0 && time < 30; // Under 30 seconds left is critical
 
     return (
       <div
@@ -46,7 +46,7 @@ export const Timer: React.FC = () => {
             </span>
           </div>
 
-          {isActive && (
+          {isActive && initialTime !== 0 && (
             <span className="relative flex h-2 w-2">
               <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
                 isCritical ? 'bg-red-400' : 'bg-emerald-400'
@@ -73,7 +73,7 @@ export const Timer: React.FC = () => {
                 : 'text-slate-400'
             }`}
           >
-            {formatTime(time)}
+            {initialTime === 0 ? '∞' : formatTime(time)}
           </span>
           
           {isAi && isAiThinking && isActive && (
@@ -86,10 +86,21 @@ export const Timer: React.FC = () => {
     );
   };
 
+  const isPlayerWhite = boardOrientation === 'white';
+
   return (
     <div className="flex flex-col sm:flex-row gap-3 w-full">
-      {renderClock('Player (White)', whiteTime, isWhiteActive, false)}
-      {renderClock('Stockfish (Black)', blackTime, isBlackActive, true)}
+      {isPlayerWhite ? (
+        <>
+          {renderClock('Player (White)', whiteTime, isWhiteActive, false)}
+          {renderClock('Stockfish (Black)', blackTime, isBlackActive, true)}
+        </>
+      ) : (
+        <>
+          {renderClock('Stockfish (White)', whiteTime, isWhiteActive, true)}
+          {renderClock('Player (Black)', blackTime, isBlackActive, false)}
+        </>
+      )}
     </div>
   );
 };

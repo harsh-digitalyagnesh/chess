@@ -10,12 +10,11 @@ export const Navbar: React.FC = () => {
         
         {/* Logo and Brand */}
         <div className="flex items-center gap-2.5">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a1917] border border-zinc-800/60 shadow-lg select-none overflow-hidden">
+          <div className="relative h-10 w-8 select-none">
             <Image
               src="/favicon.png"
               alt="Chess Logo"
-              width={32}
-              height={32}
+              fill
               className="object-contain drop-shadow-[0_0_6px_rgba(212,175,55,0.35)]"
               priority
             />

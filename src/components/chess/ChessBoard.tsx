@@ -6,6 +6,7 @@ import { Chess } from 'chess.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, AlertTriangle, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { useGame } from '../../store/gameStore';
+import { Difficulty, BoardOrientation } from '../../types/chess';
 
 export const ChessBoard: React.FC = () => {
   const {
@@ -15,9 +16,15 @@ export const ChessBoard: React.FC = () => {
     makeMove,
     highlightLegalMoves,
     restartGame,
+    startGame,
   } = useGame();
 
   const { fen, boardOrientation, isAiThinking, lastMove } = gameState;
+
+  // Local state for the game startup screen selection
+  const [selectedDifficulty, setSelectedDifficulty] = React.useState<Difficulty>('medium');
+  const [selectedTimePreset, setSelectedTimePreset] = React.useState<number>(300); // 5 min default
+  const [selectedOrientation, setSelectedOrientation] = React.useState<BoardOrientation | 'random'>('white');
 
   // Initialize a temporary Chess instance to examine square details (occupied vs empty)
   const chess = useMemo(() => new Chess(fen), [fen]);
@@ -182,7 +189,7 @@ export const ChessBoard: React.FC = () => {
             onSquareClick: ({ square }) => handleSquareClick(square),
             boardOrientation: boardOrientation,
             squareStyles: squareStyles,
-            allowDragging: !gameState.isGameOver && !isAiThinking,
+            allowDragging: !gameState.isGameOver && !isAiThinking && gameState.hasGameBegun,
             animationDurationInMs: 260,
             darkSquareStyle: { backgroundColor: '#b58863' }, // Chess.com Wood Brown
             lightSquareStyle: { backgroundColor: '#f0d9b5' }, // Chess.com Wood Cream
@@ -192,6 +199,142 @@ export const ChessBoard: React.FC = () => {
             },
           }}
         />
+
+        {/* Beautiful game-startup overlay */}
+        <AnimatePresence>
+          {!gameState.hasGameBegun && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[5px] p-4 text-center select-none"
+            >
+              <motion.div
+                initial={{ scale: 0.88, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.88, opacity: 0 }}
+                transition={{ type: 'spring', duration: 0.4 }}
+                className="w-full max-w-[360px] rounded-2xl bg-[#262522]/95 border border-zinc-800/85 p-5 shadow-2xl shadow-black/95 flex flex-col gap-4 animate-fadeIn"
+              >
+                {/* Header */}
+                <div className="flex flex-col gap-1 items-center">
+                  <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800/80 shadow-inner">
+                    <Sparkles className="h-5.5 w-5.5 text-emerald-400" />
+                  </div>
+                  <h2 className="text-lg font-black tracking-tight text-white uppercase mt-2">
+                    START NEW BATTLE
+                  </h2>
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+                    VS STOCKFISH AI
+                  </p>
+                </div>
+
+                {/* 1. Difficulty Level Option */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider pl-1">
+                    Select Bot Level:
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['easy', 'medium', 'hard'] as const).map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => setSelectedDifficulty(level)}
+                        className={`flex flex-col items-center gap-0.5 py-1.5 rounded-xl border text-[10px] font-black capitalize transition-all duration-150 cursor-pointer ${
+                          selectedDifficulty === level
+                            ? level === 'easy'
+                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 shadow-md shadow-emerald-500/5 scale-[1.02]'
+                              : level === 'medium'
+                              ? 'bg-amber-500/10 border-amber-500/50 text-amber-400 shadow-md shadow-amber-500/5 scale-[1.02]'
+                              : 'bg-red-500/10 border-red-500/50 text-red-400 shadow-md shadow-red-500/5 scale-[1.02]'
+                            : 'bg-zinc-950/20 border-zinc-800/50 text-zinc-500 hover:border-zinc-700/60 hover:text-zinc-300'
+                        }`}
+                      >
+                        <span className="text-base">
+                          {level === 'easy' ? '🟢' : level === 'medium' ? '🟡' : '🔴'}
+                        </span>
+                        <span>{level}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Time Control Presets */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider pl-1">
+                    Select Time Limit:
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { name: '1 Min', sec: 60, sub: 'Bullet' },
+                      { name: '3 Min', sec: 180, sub: 'Blitz' },
+                      { name: '5 Min', sec: 300, sub: 'Blitz' },
+                      { name: '10 Min', sec: 600, sub: 'Rapid' },
+                      { name: '30 Min', sec: 1800, sub: 'Classical' },
+                      { name: 'Untimed', sec: 0, sub: 'Casual' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.sec}
+                        onClick={() => setSelectedTimePreset(preset.sec)}
+                        className={`flex flex-col items-center justify-center py-1 rounded-xl border transition-all duration-150 cursor-pointer ${
+                          selectedTimePreset === preset.sec
+                            ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 shadow-md shadow-emerald-500/5 scale-[1.02]'
+                            : 'bg-zinc-950/20 border-zinc-800/50 text-zinc-400 hover:border-zinc-700/60 hover:text-zinc-200'
+                        }`}
+                      >
+                        <span className="text-[10px] font-black tracking-tight">{preset.name}</span>
+                        <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-wide leading-none mt-0.5">
+                          {preset.sub}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Side Orientation Option */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider pl-1">
+                    Play As:
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { name: 'White', side: 'white' as const, icon: '♔', color: 'text-zinc-100' },
+                      { name: 'Random', side: 'random' as const, icon: '🎲', color: 'text-amber-500' },
+                      { name: 'Black', side: 'black' as const, icon: '♚', color: 'text-zinc-500' },
+                    ].map((option) => (
+                      <button
+                        key={option.name}
+                        onClick={() => setSelectedOrientation(option.side)}
+                        className={`flex flex-col items-center gap-0.5 py-1 rounded-xl border transition-all duration-150 cursor-pointer ${
+                          selectedOrientation === option.side
+                            ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 shadow-md shadow-emerald-500/5 scale-[1.02]'
+                            : 'bg-zinc-950/20 border-zinc-800/50 text-zinc-400 hover:border-zinc-700/60 hover:text-zinc-200'
+                        }`}
+                      >
+                        <span className={`text-base leading-none font-bold ${option.color}`}>
+                          {option.icon}
+                        </span>
+                        <span className="text-[9px] font-black">{option.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Start Game CTA button */}
+                <button
+                  onClick={() => {
+                    const finalOrientation = selectedOrientation === 'random'
+                      ? (Math.random() < 0.5 ? 'white' : 'black')
+                      : selectedOrientation;
+                    startGame(selectedDifficulty, selectedTimePreset, finalOrientation);
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-3 mt-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white font-black text-xs shadow-xl shadow-emerald-500/20 transition-all duration-150 cursor-pointer tracking-wider uppercase"
+                >
+                  <span>⚔️ START BATTLE</span>
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Beautiful game-over overlay matching Chess.com Bot Play modals */}
         <AnimatePresence>

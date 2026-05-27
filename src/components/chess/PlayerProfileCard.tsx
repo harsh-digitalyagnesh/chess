@@ -19,23 +19,37 @@ const PIECE_SYMBOLS: Record<string, string> = {
 
 export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({ role }) => {
   const { gameState, gameStats } = useGame();
-  const { whiteTime, blackTime, isGameOver, fen } = gameState;
+  const { whiteTime, blackTime, isGameOver, fen, boardOrientation, initialTime } = gameState;
   const { whiteCaptured, blackCaptured, scoreDifference } = gameStats;
 
   // Detect active turn from FEN turn flag
   const turn = fen.split(' ')[1] || 'w';
-  const isBotActive = turn === 'b' && !isGameOver;
-  const isPlayerActive = turn === 'w' && !isGameOver;
 
   const isBot = role === 'bot';
   const name = isBot ? 'Polly' : 'Guest';
   const flag = '';
-  const time = isBot ? blackTime : whiteTime;
-  const isActive = isBot ? isBotActive : isPlayerActive;
 
-  // White captured = Black pieces captured by White/Player
-  // Black captured = White pieces captured by Black/AI
-  const captured = isBot ? blackCaptured : whiteCaptured; // white captured Black's, black captured White's
+  const isPlayerWhite = boardOrientation === 'white';
+
+  // Determine active turn, time, and captured pieces based on who is playing what color
+  let time: number;
+  let isActive: boolean;
+  let captured: CapturedPieces;
+
+  if (isPlayerWhite) {
+    // Bot is Black, Player is White
+    time = isBot ? blackTime : whiteTime;
+    isActive = isBot ? (turn === 'b' && !isGameOver) : (turn === 'w' && !isGameOver);
+    captured = isBot ? blackCaptured : whiteCaptured;
+  } else {
+    // Bot is White, Player is Black
+    time = isBot ? whiteTime : blackTime;
+    isActive = isBot ? (turn === 'w' && !isGameOver) : (turn === 'b' && !isGameOver);
+    captured = isBot ? whiteCaptured : blackCaptured;
+  }
+
+  // blackCaptured represents White pieces captured by Black!
+  const showWhiteStyle = captured === blackCaptured;
 
   // Material lead score difference
   const showLead = isBot ? scoreDifference < 0 : scoreDifference > 0;
@@ -83,7 +97,7 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({ role }) =>
                       {Array.from({ length: count }).map((_, i) => (
                         <span
                           key={i}
-                          className={`text-base leading-none select-none tracking-tighter ${isBot
+                          className={`text-base leading-none select-none tracking-tighter ${showWhiteStyle
                               ? 'text-[#eae8e4]' // White pieces captured by Polly
                               : 'text-[#1a1918]' // Black pieces captured by Guest
                             }`}
@@ -119,13 +133,13 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({ role }) =>
       {/* Clock Timer - fixed size, never shrinks or overflows */}
       <div
         className={`flex-shrink-0 flex items-center justify-center min-w-[76px] px-2.5 py-1 rounded-lg font-mono text-base font-extrabold tracking-tight transition-all duration-300 shadow-md ${isActive
-            ? time < 30
+            ? (initialTime !== 0 && time < 30)
               ? 'bg-red-600 text-white animate-pulse'
               : 'bg-emerald-600 text-white'
             : 'bg-[#262522] border border-zinc-850 text-zinc-200'
           }`}
       >
-        {formatTime(time)}
+        {initialTime === 0 ? '∞' : formatTime(time)}
       </div>
     </div>
   );

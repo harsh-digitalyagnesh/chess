@@ -40,4 +40,5 @@ export interface GameState {
   blackTime: number; // in seconds
   initialTime: number; // in seconds (for timer reset)
   lastMove: { from: string; to: string } | null;
+  hasGameBegun: boolean;
 }

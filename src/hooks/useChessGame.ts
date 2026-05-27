@@ -23,6 +23,7 @@ export const useChessGame = () => {
   const [winner, setWinner] = useState<GameState['winner']>(null);
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>('white');
   const [lastMove, setLastMove] = useState<GameState['lastMove']>(null);
+  const [hasGameBegun, setHasGameBegun] = useState<boolean>(false);
 
   // Square interaction state
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
@@ -65,6 +66,7 @@ export const useChessGame = () => {
         setBlackTime(data.blackTime ?? DEFAULT_INITIAL_TIME);
         setInitialTime(data.initialTime ?? DEFAULT_INITIAL_TIME);
         setLastMove(data.lastMove || null);
+        setHasGameBegun(data.hasGameBegun || (data.history && data.history.length > 0) || false);
         
         // Re-evaluate game stats
         setGameStats(calculateGameStats(newChess));
@@ -90,13 +92,14 @@ export const useChessGame = () => {
       blackTime,
       initialTime,
       lastMove,
+      hasGameBegun,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-  }, [fen, history, difficulty, isGameOver, gameResult, winner, boardOrientation, whiteTime, blackTime, initialTime, lastMove, isHydrated]);
+  }, [fen, history, difficulty, isGameOver, gameResult, winner, boardOrientation, whiteTime, blackTime, initialTime, lastMove, hasGameBegun, isHydrated]);
 
   // Timers countdown tick (runs at 100ms intervals)
   useEffect(() => {
-    if (isGameOver || !isHydrated) return;
+    if (isGameOver || !isHydrated || !hasGameBegun || initialTime === 0) return;
 
     const interval = setInterval(() => {
       const activeTurn = chessRef.current.turn();
@@ -121,7 +124,7 @@ export const useChessGame = () => {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isGameOver, fen, isHydrated]);
+  }, [isGameOver, fen, isHydrated, hasGameBegun]);
 
   // Handle timeout (flag fell)
   const handleTimeout = (timedOutPlayer: 'white' | 'black') => {
@@ -164,8 +167,9 @@ export const useChessGame = () => {
   /**
    * Triggers the AI opponent using Stockfish.
    */
-  const triggerAiOpponent = useCallback((currentFen: string) => {
-    const depth = DIFFICULTY_DEPTHS[difficulty];
+  const triggerAiOpponent = useCallback((currentFen: string, overrideDifficulty?: Difficulty) => {
+    const activeDifficulty = overrideDifficulty || difficulty;
+    const depth = DIFFICULTY_DEPTHS[activeDifficulty];
     
     getBestMove(currentFen, depth, (bestMove) => {
       // Delay AI move slightly to make it feel more natural
@@ -199,7 +203,7 @@ export const useChessGame = () => {
               from,
               to,
               piece: moveResult.piece,
-              color: 'b',
+              color: moveResult.color,
               fen: newFen,
               timestamp: Date.now(),
             };
@@ -359,10 +363,47 @@ export const useChessGame = () => {
     setBlackTime(selectedTime);
     setInitialTime(selectedTime);
     setGameStats(calculateGameStats(newChess));
+    setHasGameBegun(false);
 
     playChessSound('move');
     localStorage.removeItem(STORAGE_KEY);
   }, [initialTime, stopCalculation]);
+
+  /**
+   * Starts a brand new game with chosen settings
+   */
+  const startGame = useCallback((selectedDifficulty: Difficulty, selectedTime: number, selectedOrientation: BoardOrientation) => {
+    stopCalculation();
+    const newChess = new Chess();
+    chessRef.current = newChess;
+
+    setFen(START_FEN);
+    setHistory([]);
+    setCurrentMoveIndex(-1);
+    setIsGameOver(false);
+    setGameResult(null);
+    setWinner(null);
+    setLastMove(null);
+    setSelectedSquare(null);
+    setLegalMoves([]);
+    setDifficulty(selectedDifficulty);
+    
+    setWhiteTime(selectedTime);
+    setBlackTime(selectedTime);
+    setInitialTime(selectedTime);
+    
+    setBoardOrientation(selectedOrientation);
+    setGameStats(calculateGameStats(newChess));
+    setHasGameBegun(true);
+
+    playChessSound('move');
+    localStorage.removeItem(STORAGE_KEY);
+
+    // If playing as Black, Stockfish (playing as White) goes first!
+    if (selectedOrientation === 'black') {
+      triggerAiOpponent(START_FEN, selectedDifficulty);
+    }
+  }, [stopCalculation, triggerAiOpponent]);
 
   /**
    * Flip the visual board orientation
@@ -481,6 +522,7 @@ export const useChessGame = () => {
     blackTime,
     initialTime,
     lastMove,
+    hasGameBegun,
   };
 
   return {
@@ -493,6 +535,7 @@ export const useChessGame = () => {
     makeMove,
     undoMove,
     restartGame,
+    startGame,
     flipBoard,
     changeDifficulty,
     importFen,

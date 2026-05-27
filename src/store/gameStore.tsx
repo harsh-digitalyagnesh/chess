@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { GameState, GameStats, Difficulty } from '../types/chess';
+import { GameState, GameStats, Difficulty, BoardOrientation } from '../types/chess';
 
 export interface GameContextType {
   gameState: GameState;
@@ -11,6 +11,7 @@ export interface GameContextType {
   makeMove: (from: string, to: string, promotion?: string) => boolean;
   undoMove: () => void;
   restartGame: (timeInSeconds?: number) => void;
+  startGame: (difficulty: Difficulty, timeInSeconds: number, orientation: BoardOrientation) => void;
   flipBoard: () => void;
   changeDifficulty: (difficulty: Difficulty) => void;
   importFen: (fen: string) => boolean;
